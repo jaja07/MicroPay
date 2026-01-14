@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 from enum import Enum
 from typing import Optional, TYPE_CHECKING
 from uuid import UUID, uuid4
@@ -8,9 +7,6 @@ from sqlmodel import SQLModel, Field, Relationship
 
 if TYPE_CHECKING:
     from .user_entity import User
-
-def get_utc_now():
-    return datetime.now(timezone.utc)
 
 class RechargeStatus(str, Enum):
     PENDING = "pending"
@@ -23,25 +19,17 @@ class Recharges(SQLModel, table=True):
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     user_id: UUID = Field(foreign_key="users.id", ondelete="CASCADE")
+    
     amount_eur: float = Field(nullable=False)
     amount_usdc: float = Field(nullable=False)
     units_granted: float = Field(nullable=False)
     payment_provider: str = Field(nullable=False)
-    status: RechargeStatus = Field(nullable=False)
-    date: datetime = Field(default_factory=get_utc_now)
+    status: RechargeStatus = Field(default=RechargeStatus.PENDING, nullable=False)
     provider_reference: str = Field(nullable=False)
-    user: User | None = Relationship(back_populates="recharges")
+    
+    date: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc)
+    )
 
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                "amount_eur": 50.0,
-                "amount_usdc": 58.28,
-                "units_granted": 5000.0,
-                "payment_provider": "Stripe",
-                "status": "completed",
-                "date": "2023-10-27T14:30:00",
-                "provider_reference": "ref_123456789"
-            }
-        }
+    # Relation inverse
+    user: Optional["User"] = Relationship(back_populates="recharges")
