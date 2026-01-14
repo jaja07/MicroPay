@@ -1,17 +1,27 @@
 from pydantic import BaseModel, EmailStr
 from uuid import UUID
 from datetime import datetime
+from enum import Enum
 
-# Ce que l'utilisateur envoie à l'inscription
-class UserCreate(BaseModel):
+class Role(str, Enum):
+    ADMIN = "admin"
+    USER = "user"
+
+class UserCreateDTO(BaseModel):
     email: EmailStr
-    password: str  # Mot de passe en clair à ce stade
+    nom: str
+    prenom: str
+    role: Role
+    password: str
 
-# Ce que l'API renvoie (on cache le hashed_password)
-class UserRead(BaseModel):
+
+class UserReadDTO(BaseModel):
     id: UUID
     email: EmailStr
+    nom: str
+    prenom: str
+    role: str
     created_at: datetime
 
     class Config:
-        from_attributes = True # Permet de convertir un objet SQLModel en ce Schema
+        from_attributes = True # Permet de faire un mapping depuis un objet SQLModel en ce Schema

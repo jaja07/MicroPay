@@ -1,7 +1,7 @@
-fastapi[standard]
-uvicorn[standard]
-pydantic
+fastapi
 sqlmodel
+uvicorn[standard]
+psycopg2-binary
+alembic
 python-dotenv
-passlib
-bcrypt
+passlib[bcrypt]

@@ -1,8 +1,9 @@
 from sqlmodel import Session
 from uuid import UUID
 from passlib.context import CryptContext
-from backend.models.user import User
-from backend.repositories.user_repository import UserRepository
+from models.user_entity import User
+from schema.user import UserCreateDTO
+from repositories.user_repository import UserRepository
 
 
 # Configuration du contexte de hachage des mots de passe
@@ -28,7 +29,7 @@ class UserService:
         """Vérifie qu'un mot de passe correspond à son hash."""
         return pwd_context.verify(plain_password, hashed_password)
 
-    def create_user(self, email: str, password: str) -> User:
+    def create_user(self, user: UserCreateDTO) -> User:
         """
         Crée un nouvel utilisateur avec validation.
         
@@ -36,19 +37,22 @@ class UserService:
             ValueError: Si l'email existe déjà ou est invalide.
         """
         # Vérifier que l'email n'existe pas déjà
-        if self.repository.exists(email):
-            raise ValueError(f"Un utilisateur avec l'email {email} existe déjà")
+        if self.repository.exists(user.email):
+            raise ValueError(f"Un utilisateur avec l'email {user.email} existe déjà")
         
         # Valider l'email (simple validation)
-        if "@" not in email or "." not in email:
+        if "@" not in user.email or "." not in user.email:
             raise ValueError("Email invalide")
         
         # Hacher le mot de passe
-        hashed_password = self.hash_password(password)
+        hashed_password = self.hash_password(user.password)
         
         # Créer l'utilisateur
         user = User(
-            email=email,
+            email=user.email,
+            nom=user.nom,
+            prenom=user.prenom,
+            role=user.role,
             hashed_password=hashed_password
         )
         

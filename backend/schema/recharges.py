@@ -1,7 +1,7 @@
 from uuid import UUID
 from datetime import datetime
 from pydantic import BaseModel, Field
-from backend.models.recharges import RechargeStatus
+from backend.models.recharge_entity import RechargeStatus
 
 # 1. Base : Ce qui est commun à l'INPUT et à l'OUTPUT
 # On garde seulement ce que le Front envoie et que l'API renvoie tel quel.

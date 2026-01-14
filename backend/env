@@ -1,8 +1,0 @@
-# Database Configuration
-DB_HOST=localhost
-DB_NAME=payment_db
-DB_USER=admin
-DB_PASSWORD=adminpassword
-
-# PostgreSQL Connection URL
-DATABASE_URL=postgresql://admin:adminpassword@localhost:5434/payment_db

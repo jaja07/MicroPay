@@ -1,6 +1,11 @@
-from sqlmodel import SQLModel, Field
+from __future__ import annotations
+
+from sqlmodel import Relationship, SQLModel, Field
 from uuid import UUID, uuid4
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .user_entity import User
 
 
 class Wallet(SQLModel, table=True):
@@ -17,6 +22,7 @@ class Wallet(SQLModel, table=True):
     account_type: str = Field(default="SCA", max_length=20)
     state: str = Field(default="active", max_length=20)
     wallet_set_id: str = Field(max_length=255)
+    user: User | None = Relationship(back_populates="user")
 
     class Config:
         json_schema_extra = {

@@ -2,7 +2,7 @@ from typing import List, Optional
 from uuid import UUID
 from sqlmodel import Session, select
 #from datetime import datetime, timezone
-from backend.models.recharges import Recharges, RechargeStatus
+from models.recharge_entity import Recharges, RechargeStatus
  
 
 class RechargesRepository:

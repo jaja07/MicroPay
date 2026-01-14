@@ -1,13 +1,17 @@
+from __future__ import annotations
+
 from enum import Enum
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from uuid import UUID, uuid4
 from datetime import datetime, timezone
-from sqlmodel import SQLModel, Field
+from sqlmodel import SQLModel, Field, Relationship
+
+if TYPE_CHECKING:
+    from .user_entity import User
 
 def get_utc_now():
     return datetime.now(timezone.utc)
 
-# Définition de l'Enum pour le champ 'status'
 class RechargeStatus(str, Enum):
     PENDING = "pending"
     COMPLETED = "completed"
@@ -26,6 +30,7 @@ class Recharges(SQLModel, table=True):
     status: RechargeStatus = Field(nullable=False)
     date: datetime = Field(default_factory=get_utc_now)
     provider_reference: str = Field(nullable=False)
+    user: User | None = Relationship(back_populates="recharges")
 
     class Config:
         json_schema_extra = {

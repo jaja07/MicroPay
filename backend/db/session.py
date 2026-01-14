@@ -4,9 +4,18 @@ from sqlmodel import create_engine, Session, SQLModel
 from dotenv import load_dotenv
 import os
 
-load_dotenv('backend/.env')
+load_dotenv()
+database_url = os.getenv("DATABASE_URL")
 
-engine = create_engine(os.getenv('DATABASE_URL'), echo=True) #A SQLModel engine (underneath it's actually a SQLAlchemy engine) is what holds the connections to the database
+if database_url:
+    engine = create_engine(database_url, echo=True) #A SQLModel engine (underneath it's actually a SQLAlchemy engine) is what holds the connections to the database
+else:
+    raise ValueError("DATABASE_URL environment variable is not set.")
+
+
+def initialize_database():
+    """Initialise la base de données en créant les tables si elles n'existent pas."""
+    SQLModel.metadata.create_all(engine)
 
 """
 A Session is what stores the objects in memory and keeps track of any changes needed in the data, then it uses the engine to communicate with the database.  
@@ -17,3 +26,6 @@ def get_session():
         yield session
 
 SessionDep = Annotated[Session, Depends(get_session)] #This is a type alias that can be used in FastAPI path operations to automatically get a database session injected into them.
+
+if __name__ == "__main__":
+    initialize_database()

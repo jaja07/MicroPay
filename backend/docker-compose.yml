@@ -3,17 +3,47 @@ services:
     image: postgres:18-alpine
     container_name: micropay-postgres
     env_file:
-      - ./env
+      - .env
     ports:
       - "5434:5432"
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
-      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
       - postgres_data:/var/lib/postgresql/data
     restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - micropay-network
+
+
+  backend:
+    build:
+      context: .
+    container_name: micropay-backend
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy # Attend que la DB soit prête avant de lancer l'app
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    ports:
+      - "8000:8000"
+    # volumes:
+    #   - ./backend:/app # Montage pour le Hot-Reload (utile en développement)
+    networks:
+      - micropay-network
 
 volumes:
   postgres_data:
+
+networks:
+  micropay-network:
+    driver: bridge
