@@ -13,12 +13,23 @@ class UserRepository:
         """Initialise le repository avec une session SQLModel."""
         self.session = session
 
-    def create(self, user: User) -> User:
-        """Crée un nouvel utilisateur en base de données."""
-        self.session.add(user)
-        self.session.commit()
-        self.session.refresh(user)
-        return user
+    def create(self, user: User, commit: bool = True) -> User:
+            """
+            Crée un nouvel utilisateur. 
+            Si commit=False, l'objet est ajouté à la session et 'flushé' 
+            pour générer son ID, mais la transaction reste ouverte.
+            """
+            self.session.add(user)
+            
+            if commit:
+                self.session.commit()
+                self.session.refresh(user)
+            else:
+                # flush() synchronise l'objet avec la base (génère l'ID UUID)
+                # sans terminer la transaction (pas de commit).
+                self.session.flush()
+                
+            return user
 
     def get_by_id(self, user_id: UUID) -> User | None:
         """Récupère un utilisateur par son ID."""

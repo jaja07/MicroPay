@@ -1,10 +1,15 @@
+import logging
 from sqlmodel import Session
 from uuid import UUID
 from passlib.context import CryptContext
 from backend.models.user_entity import User
 from backend.schema.user import UserCreateDTO
 from backend.repositories.user_repository import UserRepository
+from backend.services import create_wallet_service
+from backend.services.wallet_service import WalletService
 
+# Configuration du logger pour suivre les erreurs en production
+logger = logging.getLogger(__name__)
 
 # Configuration du contexte de hachage des mots de passe
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -19,6 +24,7 @@ class UserService:
     def __init__(self, session: Session):
         """Initialise le service avec une session et un repository."""
         self.repository = UserRepository(session)
+        self.wallet_service = WalletService(session)
         self.session = session
 
     def hash_password(self, password: str) -> str:
@@ -30,33 +36,39 @@ class UserService:
         return pwd_context.verify(plain_password, hashed_password)
 
     def create_user(self, user: UserCreateDTO) -> User:
-        """
-        Crée un nouvel utilisateur avec validation.
-        
-        Raises:
-            ValueError: Si l'email existe déjà ou est invalide.
-        """
-        # Vérifier que l'email n'existe pas déjà
         if self.repository.exists(user.email):
             raise ValueError(f"Un utilisateur avec l'email {user.email} existe déjà")
-        
-        # Valider l'email (simple validation)
-        if "@" not in user.email or "." not in user.email:
-            raise ValueError("Email invalide")
-        
-        # Hacher le mot de passe
+
+        # 2. Préparation des données
         hashed_password = self.hash_password(user.password)
-        
-        # Créer l'utilisateur
         db_user = User(
             email=user.email,
             nom=user.nom,
             prenom=user.prenom,
-            role=user.role.value,
+            role=user.role,
             hashed_password=hashed_password
         )
-        
-        return self.repository.create(db_user)
+
+        try:
+            # 3. Création de l'utilisateur SANS commit immédiat
+            # On utilise une transaction pour pouvoir annuler si Circle échoue
+            with self.session.begin_nested(): # Create a savepoint
+                created_user = self.repository.create(db_user, commit=False)
+                self.session.flush() # Envoie à la DB pour générer l'ID, mais ne valide pas
+
+                # 4. Création du wallet Circle
+                # Si cette ligne échoue, le 'with' annulera automatiquement le flush précédent
+                created_wallet = self.wallet_service.create_wallet(created_user.id)
+                
+            # 5. Si on arrive ici, tout est OK, on valide définitivement
+            self.session.commit()
+            self.session.refresh(created_user)
+            return created_user
+
+        except Exception as e:
+            self.session.rollback()
+            logger.error(f"Échec critique de l'inscription pour {user.email}: {e}")
+            raise e
 
     def authenticate_user(self, email: str, password: str) -> User | None:
         """
