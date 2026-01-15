@@ -1,6 +1,6 @@
 from sqlmodel import Session, select
 from uuid import UUID
-from models.user_entity import User
+from backend.models.user_entity import User
 
 
 class UserRepository:

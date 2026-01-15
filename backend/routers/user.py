@@ -1,9 +1,9 @@
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from schema.user import UserCreateDTO, UserReadDTO
-from services.user_service import UserService
-from db.session import SessionDep
+from backend.schema.user import UserCreateDTO, UserReadDTO
+from backend.services.user_service import UserService
+from backend.db.session import SessionDep
 
 router = APIRouter(prefix="/users", tags=["Users"])
 

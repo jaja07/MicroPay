@@ -1,4 +1,3 @@
-from __future__ import annotations
 from sqlmodel import Relationship, SQLModel, Field
 from uuid import UUID, uuid4
 from typing import Optional, TYPE_CHECKING

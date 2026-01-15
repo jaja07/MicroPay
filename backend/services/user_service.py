@@ -1,9 +1,9 @@
 from sqlmodel import Session
 from uuid import UUID
 from passlib.context import CryptContext
-from models.user_entity import User
-from schema.user import UserCreateDTO
-from repositories.user_repository import UserRepository
+from backend.models.user_entity import User
+from backend.schema.user import UserCreateDTO
+from backend.repositories.user_repository import UserRepository
 
 
 # Configuration du contexte de hachage des mots de passe
@@ -48,15 +48,15 @@ class UserService:
         hashed_password = self.hash_password(user.password)
         
         # Créer l'utilisateur
-        user = User(
+        db_user = User(
             email=user.email,
             nom=user.nom,
             prenom=user.prenom,
-            role=user.role,
+            role=user.role.value,
             hashed_password=hashed_password
         )
         
-        return self.repository.create(user)
+        return self.repository.create(db_user)
 
     def authenticate_user(self, email: str, password: str) -> User | None:
         """

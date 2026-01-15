@@ -1,10 +1,17 @@
+from backend.models.user_entity import User
+from backend.models.wallet_entity import Wallet
+from backend.models.recharge_entity import Recharges
+
 from typing import Annotated
 from fastapi import Depends
 from sqlmodel import create_engine, Session, SQLModel
 from dotenv import load_dotenv
 import os
+from pathlib import Path
 
-load_dotenv()
+# Charger le .env depuis le dossier backend, peu importe d'où l'app est lancée
+env_path = Path(__file__).parent.parent / ".env"
+load_dotenv(dotenv_path=env_path)
 database_url = os.getenv("DATABASE_URL")
 
 if database_url:

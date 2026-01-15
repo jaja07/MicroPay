@@ -11,8 +11,19 @@ class UserCreateDTO(BaseModel):
     email: EmailStr
     nom: str
     prenom: str
-    role: Role
+    role: Role = Role.USER
     password: str
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "email": "user@example.com",
+                "nom": "DOE",
+                "prenom": "John",
+                "role": "user",
+                "password": "1234"
+            }
+    }
 
 
 class UserReadDTO(BaseModel):

@@ -2,8 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# On n'importe plus initialize_database depuis session.py
-from routers import user
+from backend.routers import user
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
