@@ -7,3 +7,4 @@ python-dotenv
 passlib[bcrypt]
 circle-developer-controlled-wallets
 cryptography
+requests

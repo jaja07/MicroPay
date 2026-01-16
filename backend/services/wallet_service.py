@@ -42,16 +42,16 @@ class WalletService:
             # 3. MAPPING : Préparation de l'entité locale
             wallet_entity = Wallet(
                 user_id=user_id,
-                circle_wallet_id=circle_wallet.id,
-                address=circle_wallet.address,
-                blockchain=circle_wallet.blockchain,
-                account_type=circle_wallet.account_type,
-                state=circle_wallet.state,
-                wallet_set_id=circle_wallet.wallet_set_id
+                circle_wallet_id=circle_wallet["id"],
+                address=circle_wallet["address"],
+                blockchain=circle_wallet["blockchain"],
+                account_type=circle_wallet["accountType"],
+                state=circle_wallet["state"],
+                wallet_set_id=circle_wallet["walletSetId"]
             )
 
             # 4. PERSISTANCE : Enregistrement en base de données
-            logger.info(f"Enregistrement du wallet {circle_wallet.id} en base de données.")
+            logger.info(f"Enregistrement du wallet {circle_wallet['id']} en base de données.")
             return self.repository.create(wallet_entity)
 
         except Exception as e:

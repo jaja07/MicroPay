@@ -36,6 +36,7 @@ class UserService:
         return pwd_context.verify(plain_password, hashed_password)
 
     def create_user(self, user: UserCreateDTO) -> User:
+        # 1. Vérification d'unicité
         if self.repository.exists(user.email):
             raise ValueError(f"Un utilisateur avec l'email {user.email} existe déjà")
 
@@ -50,24 +51,31 @@ class UserService:
         )
 
         try:
-            # 3. Création de l'utilisateur SANS commit immédiat
-            # On utilise une transaction pour pouvoir annuler si Circle échoue
-            with self.session.begin_nested(): # Create a savepoint
-                created_user = self.repository.create(db_user, commit=False)
-                self.session.flush() # Envoie à la DB pour générer l'ID, mais ne valide pas
+            # ÉTAPE A : Créer l'utilisateur en base (SANS commit)
+            # Le repository fait un session.add() et session.flush()
+            # Cela génère l'ID (UUID) sans valider la transaction.
+            created_user = self.repository.create(db_user, commit=False)
 
-                # 4. Création du wallet Circle
-                # Si cette ligne échoue, le 'with' annulera automatiquement le flush précédent
-                created_wallet = self.wallet_service.create_wallet(created_user.id)
-                
-            # 5. Si on arrive ici, tout est OK, on valide définitivement
+            # ÉTAPE B : Créer le wallet Circle
+            # On utilise l'ID généré au-dessus. 
+            # Si Circle renvoie une erreur, on saute directement au 'except'.
+            self.wallet_service.create_wallet(created_user.id)
+
+            # ÉTAPE C : Validation finale
+            # Si on arrive ici, l'user et le wallet sont prêts en mémoire/flush.
+            # On valide les deux d'un seul coup.
             self.session.commit()
+            
+            # ÉTAPE D : Rafraîchissement
+            # Maintenant que c'est en base, on recharge l'objet pour avoir ses relations
             self.session.refresh(created_user)
             return created_user
 
         except Exception as e:
+            # En cas d'erreur (Circle, DB, ou erreur de code), on annule TOUT.
+            # L'utilisateur ne sera pas créé en base s'il n'a pas pu avoir de wallet.
             self.session.rollback()
-            logger.error(f"Échec critique de l'inscription pour {user.email}: {e}")
+            # On remonte l'erreur pour que l'API puisse renvoyer le bon code HTTP
             raise e
 
     def authenticate_user(self, email: str, password: str) -> User | None:
