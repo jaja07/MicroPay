@@ -56,7 +56,7 @@ def generate_ciphertext(public_key_string: str, hex_encoded_entity_secret: str) 
     print("Entity secret ciphertext:", encrypted_data_base64.decode())
     return encrypted_data_base64.decode()
 
-def create_wallet(idempotency_key: str) -> list[dict] | None:
+def create_wallet(idempotency_key: str, user_name: str) -> list[dict] | None:
     env_path = Path(__file__).parent.parent / ".env"
     load_dotenv(dotenv_path=env_path)
     
@@ -77,15 +77,15 @@ def create_wallet(idempotency_key: str) -> list[dict] | None:
 
     payload = {
         "idempotencyKey": idempotency_key,
-        "blockchains": ["MATIC-AMOY"],
+        "blockchains": ["ARC-TESTNET"],
         "entitySecretCiphertext": ciphertext,
         "walletSetId": wallet_set_id,
         "accountType": "SCA",
         "count": 1,
         "metadata": [
             {
-                "name": "UserWallet", 
-                "refId": f"user_{idempotency_key[:8]}" # Ref unique basée sur l'idempotency
+                "name": f"{user_name} Wallet",
+                "refId": f"user_{idempotency_key[:8]}"
             }
         ]
     }

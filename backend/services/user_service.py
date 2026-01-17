@@ -59,7 +59,7 @@ class UserService:
             # ÉTAPE B : Créer le wallet Circle
             # On utilise l'ID généré au-dessus. 
             # Si Circle renvoie une erreur, on saute directement au 'except'.
-            self.wallet_service.create_wallet(created_user.id)
+            self.wallet_service.create_wallet(created_user.id, f"{created_user.nom} {created_user.prenom}")
 
             # ÉTAPE C : Validation finale
             # Si on arrive ici, l'user et le wallet sont prêts en mémoire/flush.

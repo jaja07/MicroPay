@@ -15,7 +15,7 @@ class WalletService:
         self.repository = WalletRepository(session)
         self.session = session
 
-    def create_wallet(self, user_id: UUID) -> Wallet:
+    def create_wallet(self, user_id: UUID, user_name: str) -> Wallet:
         """
         Gère le workflow de création d'un wallet.
         Inclut la validation, la sécurité Circle et la persistance.
@@ -32,7 +32,7 @@ class WalletService:
             # 2. APPEL CIRCLE : Création physique
             # On passe l'user_id comme clé d'idempotence pour la sécurité Circle
             logger.info(f"Appel à l'API Circle pour l'utilisateur {user_id}...")
-            circle_wallets_list = create_wallet_service.create_wallet(idempotency_key=str(user_id))
+            circle_wallets_list = create_wallet_service.create_wallet(idempotency_key=str(user_id), user_name=user_name)
             
             if not circle_wallets_list:
                 raise ValueError("La réponse de Circle est vide.")
