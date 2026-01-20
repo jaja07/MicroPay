@@ -2,6 +2,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from backend.schema.user import UserCreateDTO, UserReadDTO
+from backend.schema.auth import VerifyOTPRequestUser
 from backend.services.user_service import UserService
 from backend.db.session import SessionDep
 
@@ -22,3 +23,12 @@ def create_user(
         raise HTTPException(status_code=400, detail="User already exists")
     
     return db_user
+
+@router.post("/verify-otp")
+async def verify_otp(request: VerifyOTPRequestUser, service: UserServiceDep):
+    if service.verify_otp(request.email, request.otp_code):
+        return {
+            "status": 200,
+            "message": "OTP vérifié avec succès"
+                }
+    raise HTTPException(status_code=400, detail="Code OTP invalide ou expiré")
