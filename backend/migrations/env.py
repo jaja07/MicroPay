@@ -8,6 +8,8 @@ from alembic import context
 from models.user_entity import User
 from models.wallet_entity import Wallet
 from models.recharge_entity import Recharges
+from models.inventory_entity import InventoryReservation
+from models.wallet_entity import Wallet
 
 from dotenv import load_dotenv
 import os

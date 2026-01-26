@@ -1,3 +1,5 @@
+# backend/services/wallet_service.py
+
 import logging
 from sqlmodel import Session
 from uuid import UUID
@@ -5,7 +7,7 @@ from typing import Optional
 
 from backend.models.wallet_entity import Wallet
 from backend.repositories.wallet_repository import WalletRepository
-from backend.services import create_wallet_service
+from backend.services.create_wallet_service import CreateWalletService
 
 # Configuration du logger pour suivre les erreurs en production
 logger = logging.getLogger(__name__)
@@ -14,6 +16,7 @@ class WalletService:
     def __init__(self, session: Session):
         self.repository = WalletRepository(session)
         self.session = session
+        self.circle_service = CreateWalletService ()
 
     def create_wallet(self, user_id: UUID, user_name: str) -> Wallet:
         """
@@ -32,7 +35,8 @@ class WalletService:
             # 2. APPEL CIRCLE : Création physique
             # On passe l'user_id comme clé d'idempotence pour la sécurité Circle
             logger.info(f"Appel à l'API Circle pour l'utilisateur {user_id}...")
-            circle_wallets_list = create_wallet_service.create_wallet(idempotency_key=str(user_id), user_name=user_name)
+            circle_wallets_list = self.circle_service.create_wallet(idempotency_key=str(user_id), user_name=user_name)
+            
             
             if not circle_wallets_list:
                 raise ValueError("La réponse de Circle est vide.")

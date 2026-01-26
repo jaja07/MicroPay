@@ -24,14 +24,14 @@ class User(SQLModel, table=True):
     hashed_password: str = Field(nullable=False)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     wallet: Optional["Wallet"] = Relationship(back_populates="user", cascade_delete=True)
-    recharges: list["Recharges"] = Relationship(back_populates="user", )
+    recharges: list["Recharges"] = Relationship(back_populates="user")
 
     class Config:
         json_schema_extra = {
             "example": {
-                "email": "john.doe@example.com",
-                "nom": "Doe",
-                "prenom": "John",
+                "email": "josiane.ife@example.com",
+                "nom": "IFE",
+                "prenom": "Josiane",
                 "role": "user"
             }
         }

@@ -2,10 +2,10 @@ from typing import List, Optional
 from uuid import UUID
 from sqlmodel import Session, select
 #from datetime import datetime, timezone
-from models.recharge_entity import Recharges, RechargeStatus
+from backend.models.recharge_entity import Recharges, RechargeStatus
  
 
-class RechargesRepository:
+class RechargeRepository:
     def __init__(self, session: Session):
         self.session = session
 

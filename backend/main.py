@@ -3,6 +3,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.routers import user
+from backend.routers import recharge
+from backend.routers import payment
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -28,7 +30,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+####################################
+# --- ENREGISTREMENT DES ROUTES ---
+####################################
+
 app.include_router(user.router)
+app.include_router(recharge.router) 
+app.include_router(payment.router)
 
 @app.get("/", tags=["Health"])
 async def root():

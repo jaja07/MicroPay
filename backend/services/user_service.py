@@ -1,3 +1,4 @@
+# backend/services/user_service.py
 import logging
 from sqlmodel import Session
 from uuid import UUID
@@ -10,7 +11,6 @@ from pwdlib import PasswordHash
 from backend.models.user_entity import User
 from backend.schema.user import UserCreateDTO
 from backend.repositories.user_repository import UserRepository
-from backend.services import create_wallet_service
 from backend.services.wallet_service import WalletService
 
 # Configuration du logger pour suivre les erreurs en production
