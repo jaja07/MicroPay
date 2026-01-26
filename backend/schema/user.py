@@ -3,18 +3,34 @@ from uuid import UUID
 from datetime import datetime
 from enum import Enum
 
+from .recharge import RechargeRead
+from .wallet import WalletReadDTO
+
 class Role(str, Enum):
     ADMIN = "admin"
     USER = "user"
 
-class UserCreateDTO(BaseModel):
+class UserBase(BaseModel):
     email: EmailStr
     nom: str
     prenom: str
-    role: Role = Role.USER
-    password: str
+
+class UserReadDTO(UserBase):
+    id: UUID
+    role: Role
+    created_at: datetime
+    recharges: list[RechargeRead] = []
+    wallet: WalletReadDTO | None = None
 
     class Config:
+        from_attributes = True
+
+class UserCreateDTO(UserBase):
+    password: str
+    role: Role = Role.USER
+
+    class Config:
+        from_attributes = True
         json_schema_extra = {
             "example": {
                 "email": "user@example.com",
@@ -26,13 +42,3 @@ class UserCreateDTO(BaseModel):
     }
 
 
-class UserReadDTO(BaseModel):
-    id: UUID
-    email: EmailStr
-    nom: str
-    prenom: str
-    role: str
-    created_at: datetime
-
-    class Config:
-        from_attributes = True # Permet de faire un mapping depuis un objet SQLModel en ce Schema
