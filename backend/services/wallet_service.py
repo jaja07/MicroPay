@@ -7,7 +7,7 @@ from typing import Optional
 
 from backend.models.wallet_entity import Wallet
 from backend.repositories.wallet_repository import WalletRepository
-from backend.services.create_wallet_service import CreateWalletService
+from backend.services.circle_service import CircleService
 
 # Configuration du logger pour suivre les erreurs en production
 logger = logging.getLogger(__name__)
@@ -16,7 +16,7 @@ class WalletService:
     def __init__(self, session: Session):
         self.repository = WalletRepository(session)
         self.session = session
-        self.circle_service = CreateWalletService ()
+        self.circle_service = CircleService()
 
     def create_wallet(self, user_id: UUID, user_name: str) -> Wallet:
         """

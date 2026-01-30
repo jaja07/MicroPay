@@ -4,8 +4,10 @@ from typing import Optional, TYPE_CHECKING
 from uuid import UUID, uuid4
 from datetime import datetime, timezone
 from sqlmodel import SQLModel, Field, Relationship
-
 from .user_entity import User
+
+if TYPE_CHECKING:
+    from .user_entity import User
 
 class RechargeStatus(str, Enum):
     PENDING = "pending"

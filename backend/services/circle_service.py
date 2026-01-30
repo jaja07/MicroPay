@@ -1,12 +1,10 @@
 # backend/services/circle_service.py
-
-import os
-import base64
-import requests
+import uuid, base64, requests
 from dotenv import load_dotenv, find_dotenv
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.Hash import SHA256
+from backend.core.config import Settings
 
 
 class CircleService:
@@ -16,25 +14,18 @@ class CircleService:
     """
 
     def __init__(self):
-        load_dotenv(find_dotenv())
+        # load_dotenv(find_dotenv())
 
-        self.api_key = self._require_env("CIRCLE_API_KEY")
-        self.entity_secret = self._require_env("HEX_ENCODED_ENTITY_SECRET")
-        self.base_url = self._require_env("CIRCLE_BASE_URL")
+        self.api_key = Settings.CIRCLE_API_KEY.get_secret_value()
+        self.entity_secret = Settings.HEX_ENCODED_ENTITY_SECRET.get_secret_value()
+        self.base_url = Settings.CIRCLE_BASE_URL
+        self.wallet_set_id = Settings.WALLET_SET_ID
 
         self.headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
             "accept": "application/json",
         }
-
-    @staticmethod
-    def _require_env(name: str) -> str:
-        value = os.getenv(name)
-        if not value:
-            raise RuntimeError(f"Variable d'environnement manquante: {name}")
-        return value
-
         
     # ─────────────────────────────
     # Circle helpers
@@ -65,6 +56,39 @@ class CircleService:
         encrypted = cipher.encrypt(entity_secret_bytes)
 
         return base64.b64encode(encrypted).decode()
+    
+    def create_wallet(
+        self,
+        idempotency_key: str,
+        user_name: str
+    ) -> list[dict] | None:
+    
+        if not idempotency_key:
+            idempotency_key = str(uuid.uuid4())
+
+        ciphertext = self.encrypt_entity_secret()
+
+        payload = {
+            "idempotencyKey": idempotency_key,
+            "blockchains": ["ARC-TESTNET"],
+            "entitySecretCiphertext": ciphertext,
+            "walletSetId": self.wallet_set_id,
+            "accountType": "SCA",
+            "count": 1,
+            "metadata": [
+                {
+                    "name": f"{user_name} Wallet",
+                    "refId": f"user_{idempotency_key[:8]}"
+                }
+            ]
+        }
+
+        response = self.post(
+            endpoint="/w3s/developer/wallets",
+            payload=payload
+        )
+
+        return response.get("data", {}).get("wallets", [])
 
     # ─────────────────────────────
     # HTTP générique

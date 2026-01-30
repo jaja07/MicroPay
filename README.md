@@ -80,11 +80,6 @@ DB_NAME=payment_db
 DB_USER=admin
 DB_PASSWORD=adminpassword
 
-# PostgreSQL Environment Variables for Docker
-POSTGRES_USER=admin
-POSTGRES_PASSWORD=adminpassword
-POSTGRES_DB=payment_db
-
 # PostgreSQL Connection URL (localhost for local development)
 DATABASE_URL=postgresql://admin:adminpassword@localhost:5434/payment_db
 ```

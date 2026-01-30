@@ -14,6 +14,10 @@ class UserRole(str, Enum):
     USER = "user"
 
 class User(SQLModel, table=True):
+    """
+    Modèle représentant un utilisateur dans la base de données.
+    Contient les informations de base, le rôle, le mot de passe haché,
+    """
     __tablename__ = "users"
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
