@@ -8,7 +8,7 @@ from pwdlib import PasswordHash
 from jwt.exceptions import InvalidTokenError
 from datetime import datetime, timedelta, timezone
 
-from backend.core.config import Settings
+from backend.core.config import settings
 from backend.models.user_entity import User
 from backend.schema.user import UserCreateDTO, TokenData
 from backend.repositories.user_repository import UserRepository
@@ -24,9 +24,9 @@ redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=T
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/token")
 password_hash = PasswordHash.recommended()
 
-SECRET_KEY = Settings.SECRET_KEY.get_secret_value()
-ALGORITHM = Settings.ALGORITHM
-ACCESS_TOKEN_EXPIRE_MINUTES = Settings.ACCESS_TOKEN_EXPIRE_MINUTES
+SECRET_KEY = settings.SECRET_KEY.get_secret_value()
+ALGORITHM = settings.ALGORITHM
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
 
 
 class UserService:

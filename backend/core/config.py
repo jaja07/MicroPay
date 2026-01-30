@@ -1,4 +1,4 @@
-from pydantic import Field, SecretStr, ComputedField
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pathlib import Path
 
@@ -18,14 +18,14 @@ class Settings(BaseSettings):
     CIRCLE_API_KEY: SecretStr
     WALLET_SET_ID: str
     HEX_ENCODED_ENTITY_SECRET: SecretStr
-    MASTER_WALLET_ID: str = Field(..., env="CIRCLE_MASTER_WALLET_ID")
+    MASTER_WALLET_ID: str = Field(..., validation_alias="CIRCLE_MASTER_WALLET_ID")
     CIRCLE_BASE_URL: str = "https://api.circle.com/v1"
-    USDC_TOKEN_ID: str = Field(..., env="CIRCLE_USDC_TOKEN_ID")
-    GAS_TOKEN_SYMBOL: str = Field("USDC-TESTNET", env="CIRCLE_GAS_TOKEN_SYMBOL")
-    MIN_GAS_THRESHOLD: float = Field(1.0, env="CIRCLE_MIN_GAS_THRESHOLD")
+    USDC_TOKEN_ID: str = Field(..., validation_alias="CIRCLE_USDC_TOKEN_ID")
+    GAS_TOKEN_SYMBOL: str = Field("USDC-TESTNET", validation_alias="CIRCLE_GAS_TOKEN_SYMBOL")
+    MIN_GAS_THRESHOLD: float = Field(1.0, validation_alias="CIRCLE_MIN_GAS_THRESHOLD")
     
     # --- JWT Configuration ---
-    SECRET_KEY: SecretStr
+    SECRET_KEY: SecretStr = Field(..., validation_alias="SECRET_KEY")
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     

@@ -4,7 +4,7 @@ from dotenv import load_dotenv, find_dotenv
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.Hash import SHA256
-from backend.core.config import Settings
+from backend.core.config import settings
 
 
 class CircleService:
@@ -16,10 +16,10 @@ class CircleService:
     def __init__(self):
         # load_dotenv(find_dotenv())
 
-        self.api_key = Settings.CIRCLE_API_KEY.get_secret_value()
-        self.entity_secret = Settings.HEX_ENCODED_ENTITY_SECRET.get_secret_value()
-        self.base_url = Settings.CIRCLE_BASE_URL
-        self.wallet_set_id = Settings.WALLET_SET_ID
+        self.api_key = settings.CIRCLE_API_KEY.get_secret_value()
+        self.entity_secret = settings.HEX_ENCODED_ENTITY_SECRET.get_secret_value()
+        self.base_url = settings.CIRCLE_BASE_URL
+        self.wallet_set_id = settings.WALLET_SET_ID
 
         self.headers = {
             "Authorization": f"Bearer {self.api_key}",
