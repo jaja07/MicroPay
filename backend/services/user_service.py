@@ -1,19 +1,16 @@
-import os, logging, random, string, redis, jwt
-from typing import Annotated
+import logging, redis
 from sqlmodel import Session
 from uuid import UUID
-from fastapi import Depends, HTTPException, status
+from fastapi import HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from pwdlib import PasswordHash
-from jwt.exceptions import InvalidTokenError
-from datetime import datetime, timedelta, timezone
 
 from backend.core.config import settings
 from backend.models.user_entity import User
 from backend.schema.user import UserCreateDTO, TokenData
 from backend.repositories.user_repository import UserRepository
 from backend.services.wallet_service import WalletService
-from backend.services.auth_service import send_mail
+from backend.services.auth_service import AuthService
 
 # Configuration du logger pour suivre les erreurs en production
 logger = logging.getLogger(__name__)
@@ -21,7 +18,7 @@ logger = logging.getLogger(__name__)
 # Connexion Redis
 redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/token") # It declares that the URL for obtaining the token is /users/token, which corresponds to the login endpoint defined in user.py.
 password_hash = PasswordHash.recommended()
 
 SECRET_KEY = settings.SECRET_KEY.get_secret_value()
@@ -40,6 +37,7 @@ class UserService:
         self.repository = UserRepository(session)
         self.wallet_service = WalletService(session)
         self.session = session
+        self.auth_service = AuthService(session)
 
     def get_user(self, user_id: UUID) -> User | None:
         """Récupère un utilisateur par son ID."""
@@ -52,14 +50,17 @@ class UserService:
     def get_all_users(self, skip: int = 0, limit: int = 10) -> list[User]:
         """Récupère la liste de tous les utilisateurs."""
         return self.repository.get_all(skip=skip, limit=limit)
-    
+
+    """Todo: Rendre la fonction async
+        Ajouter des outbox pattern ou des tâches de nettoyage (crons) pour vérifier la cohérence entre la base de données et 
+        Circle (ex: si un wallet a été créé mais que l'utilisateur n'a pas été validé, ou inversement).""" 
     def create_user(self, user: UserCreateDTO) -> User:
         # 1. Vérification d'unicité
         if self.repository.exists(user.email):
             raise ValueError(f"Un utilisateur avec l'email {user.email} existe déjà")
 
         # 2. Préparation des données
-        hashed_password = self.get_password_hash(user.password)
+        hashed_password = self.auth_service.get_password_hash(user.password)
         db_user = User(
             email=user.email,
             nom=user.nom,
@@ -88,9 +89,9 @@ class UserService:
             # Maintenant que c'est en base, on recharge l'objet pour avoir ses relations
             self.session.refresh(created_user)
 
-            # ÉTAPE E : Envoyer OTP par email ✅ NOUVEAU
+            # ÉTAPE E : Envoyer OTP par email
             try:
-                self.send_otp_email(created_user.email)
+                self.auth_service.send_otp_email(created_user.email)
                 logger.info(f"OTP envoyé automatiquement à {created_user.email}")
             except Exception as otp_error:
                 logger.error(f"Erreur envoi OTP après inscription : {str(otp_error)}")
@@ -119,7 +120,7 @@ class UserService:
             update_data["email"] = email
         
         if password is not None:
-            update_data["hashed_password"] = self.hash_password(password)
+            update_data["hashed_password"] = self.auth_service.get_password_hash(password)
         
         return self.repository.update(user_id, update_data)
 
@@ -127,24 +128,14 @@ class UserService:
         """Supprime un utilisateur par son ID."""
         return self.repository.delete(user_id)
     
-    def get_current_user(self, token: Annotated[str, Depends(oauth2_scheme)]):
-        credentials_exception = HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-        try:
-            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-            username: str = payload.get("sub")
-            if username is None:
-                raise credentials_exception
-            token_data = TokenData(username=username)
-        except InvalidTokenError:
-            raise credentials_exception
-        user = self.get_user_by_email(username)
-        if user is None:
-            raise credentials_exception
-        return user
+    # def get_current_user(self, token: str):
+    #     """Valide le token JWT dans l'entête de la requête et identifie l'utilisateur en vérifiant qu'il est 
+    #         présent dans la base de données."""
+    #     email = self.auth_service.decode_token(token)
+    #     user = self.repository.get_by_email(email)
+    #     if not user:
+    #         raise HTTPException(status_code=401, detail="User non trouvé")
+    #     return user
 
     def authenticate_user(self, email: str, password: str) -> User | bool:
         """
@@ -155,7 +146,7 @@ class UserService:
         if not user:
             return False
         
-        if not self.verify_password(password, user.hashed_password):
+        if not self.auth_service.verify_password(password, user.hashed_password):
             return False
         
         return user

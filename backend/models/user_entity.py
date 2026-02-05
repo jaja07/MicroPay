@@ -13,6 +13,9 @@ class UserRole(str, Enum):
     ADMIN = "admin"
     USER = "user"
 
+############
+# Todo: Ajouters les champs "is_active" pour gérer les utilisateurs désactivés (ex: en cas de fraude ou de non validation du KYC).
+# et is_verified pour différencier les utilisateurs qui ont validé leur email et leur identité de ceux qui ne l'ont pas fait (ex: en cas de création de compte sans finalisation du KYC).
 class User(SQLModel, table=True):
     """
     Modèle représentant un utilisateur dans la base de données.
