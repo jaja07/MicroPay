@@ -1,9 +1,10 @@
+# backend/core/dependencies
+
 from typing import Annotated
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 import jwt
 from jwt.exceptions import InvalidTokenError
-
 from backend.repositories.user_repository import UserRepository
 from backend.core.config import settings
 from backend.models.user_entity import User
@@ -12,6 +13,7 @@ from backend.db.session import SessionDep
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/token")
+
 # Todo: Rendre la fonction asynchrone
 def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)],
@@ -25,7 +27,8 @@ def get_current_user(
     headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        secret = settings.SECRET_KEY.get_secret_value() if hasattr(settings.SECRET_KEY, "get_secret_value") else settings.SECRET_KEY
+        payload = jwt.decode(token, secret, algorithms=[settings.ALGORITHM])
         email: str = payload.get("sub")
         if email is None:
             raise credentials_exception

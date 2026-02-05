@@ -15,7 +15,7 @@ async def lifespan(app: FastAPI):
     print("Fermeture de l'application...")
 
 app = FastAPI(
-    title="Mon API FastAPI",
+    title="MicroPay API",
     description="Architecture en couches avec SQLModel & Alembic",
     version="1.0.0",
     lifespan=lifespan

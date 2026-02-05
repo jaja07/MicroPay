@@ -10,24 +10,24 @@ from backend.core.dependencies import get_current_user
 
 router = APIRouter(prefix="/recharges", tags=["Recharges"])
 
-# ---------------------------------------------------------
-# TODO : récupérer le user_id dans la session 
-# de l'utilisateur connecté en utilisant son token JWT
-# ---------------------------------------------------------
 
 @router.post("/init-payment", response_model=RechargeInitResponse)
 def init_payment(
     req: RechargeInitRequest, 
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user) # 🔒 Protection de la route
 ):
     """
-    Initie un paiement en partant d'un nombre d'UNITÉS.
-    Exemple Input: { "units": 50 }
+    Initie un paiement Stripe pour acheter des crédits.
+    L'utilisateur doit être connecté (Header Authorization: Bearer <token>).
     """
-    user_id = current_user.id
-
-    print(f"TEST MODE: Demande de {req.units} unités pour user {user_id}")
     
+    # Petit log pour le debug
+    #print(f" Init Payment par : {current_user.email} (ID: {current_user.id})")
+    #print(f" Unités demandées : {req.units}")
+
+    # On instancie le service
     service = RechargeService(session)
-    return service.init_payment_by_units(user_id, req.units)
+    
+    # On lance la logique métier avec le VRAI ID de l'utilisateur connecté
+    return service.init_payment_by_units(user_id=current_user.id, units=req.units)
