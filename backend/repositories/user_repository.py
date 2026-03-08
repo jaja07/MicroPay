@@ -25,8 +25,6 @@ class UserRepository:
                 self.session.commit()
                 self.session.refresh(user)
             else:
-                # flush() synchronise l'objet avec la base (génère l'ID UUID)
-                # sans terminer la transaction (pas de commit).
                 self.session.flush()
                 
             return user
@@ -34,7 +32,8 @@ class UserRepository:
     def get_by_id(self, user_id: UUID) -> User | None:
         """Récupère un utilisateur par son ID."""
         statement = select(User).where(User.id == user_id)
-        return self.session.exec(statement).first()
+        result = self.session.exec(statement).first()
+        return result
 
     def get_by_email(self, email: str) -> User | None:
         """Récupère un utilisateur par son email."""
@@ -44,7 +43,7 @@ class UserRepository:
     def get_all(self, skip: int = 0, limit: int = 10) -> list[User]:
         """Récupère la liste de tous les utilisateurs avec pagination."""
         statement = select(User).offset(skip).limit(limit)
-        return self.session.exec(statement).all()
+        return list(self.session.exec(statement).all())
 
     def update(self, user_id: UUID, user_update: dict) -> User | None:
         """Met à jour un utilisateur avec les données fournies."""
@@ -52,23 +51,25 @@ class UserRepository:
         if not user:
             return None
         
-        for key, value in user_update.items():
-            if hasattr(user, key) and value is not None:
-                setattr(user, key, value)
+        # Utilise l'utilitaire SQLModel pour mettre à jour l'objet
+        user.sqlmodel_update(user_update)
         
         self.session.add(user)
         self.session.commit()
         self.session.refresh(user)
         return user
 
-    def delete(self, user_id: UUID) -> bool:
+    def delete(self, user_id: UUID, commit: bool = True) -> bool:
         """Supprime un utilisateur par son ID."""
         user = self.get_by_id(user_id)
         if not user:
             return False
         
         self.session.delete(user)
-        self.session.commit()
+        if commit:
+            self.session.commit()
+        else:
+            self.session.flush()
         return True
 
     def exists(self, email: str) -> bool:

@@ -71,17 +71,42 @@ pip install -r requirements.txt
 
 ### 1. Créer le fichier `.env`
 
-Copie le fichier `.env` existant ou crée-le avec cette configuration **pour le développement local** :
+Depuis le dossier `backend`, crée ton `.env` à partir du modèle :
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Puis renseigne les valeurs sensibles dans `.env` (Circle, JWT, SMTP). Variables requises :
 
 ```env
-# Database Configuration (local development)
+# Database
 DB_HOST=localhost
+DB_PORT=5434
 DB_NAME=payment_db
 DB_USER=admin
 DB_PASSWORD=adminpassword
 
-# PostgreSQL Connection URL (localhost for local development)
-DATABASE_URL=postgresql://admin:adminpassword@localhost:5434/payment_db
+# Circle API
+CIRCLE_API_KEY=your_circle_api_key
+WALLET_SET_ID=your_wallet_set_id
+HEX_ENCODED_ENTITY_SECRET=your_hex_encoded_entity_secret
+CIRCLE_MASTER_WALLET_ID=your_master_wallet_id
+CIRCLE_USDC_TOKEN_ID=your_usdc_token_id
+CIRCLE_GAS_TOKEN_SYMBOL=USDC-TESTNET
+CIRCLE_MIN_GAS_THRESHOLD=1.0
+
+# JWT
+SECRET_KEY=replace_with_a_long_random_secret
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=60
+
+# Email / SMTP
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your_email_username
+MAIL_PASSWORD=your_email_password_or_app_password
+FROM_MAIL=no-reply@micropay.local
 ```
 
 ### 2. Lancer PostgreSQL (avec Docker)

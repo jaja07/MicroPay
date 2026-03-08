@@ -1,16 +1,17 @@
 import logging, redis
 from sqlmodel import Session
 from uuid import UUID
-from fastapi import HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from pwdlib import PasswordHash
+from typing import Optional
 
 from backend.core.config import settings
 from backend.models.user_entity import User
-from backend.schema.user import UserCreateDTO, TokenData
+from backend.schema.user import UserCreateDTO, UserUpdateDTO
 from backend.repositories.user_repository import UserRepository
 from backend.services.wallet_service import WalletService
 from backend.services.auth_service import AuthService
+from backend.services.treasury_service import TreasuryService
 
 # Configuration du logger pour suivre les erreurs en production
 logger = logging.getLogger(__name__)
@@ -21,7 +22,7 @@ redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=T
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/token") # It declares that the URL for obtaining the token is /users/token, which corresponds to the login endpoint defined in user.py.
 password_hash = PasswordHash.recommended()
 
-SECRET_KEY = settings.SECRET_KEY.get_secret_value()
+SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = settings.ALGORITHM
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
 
@@ -38,6 +39,7 @@ class UserService:
         self.wallet_service = WalletService(session)
         self.session = session
         self.auth_service = AuthService(session)
+        self.treasury = TreasuryService()
 
     def get_user(self, user_id: UUID) -> User | None:
         """Récupère un utilisateur par son ID."""
@@ -57,7 +59,7 @@ class UserService:
     def create_user(self, user: UserCreateDTO) -> User:
         # 1. Vérification d'unicité
         if self.repository.exists(user.email):
-            raise ValueError(f"Un utilisateur avec l'email {user.email} existe déjà")
+            raise ValueError(f"A user with the email {user.email} already exists")
 
         # 2. Préparation des données
         hashed_password = self.auth_service.get_password_hash(user.password)
@@ -105,48 +107,56 @@ class UserService:
             # On remonte l'erreur pour que l'API puisse renvoyer le bon code HTTP
             raise e
 
-    def update_user(self, user_id: UUID, email: str = None, password: str = None) -> User | None:
+    def update_user(self, user_id: UUID, user_data: UserUpdateDTO) -> Optional[User]:
         """
-        Met à jour un utilisateur.
-        Hache le nouveau mot de passe s'il est fourni.
+        Service pour mettre à jour un utilisateur.
+        Orchestre la logique métier avant l'appel au repository.
         """
-        update_data = {}
-        
-        if email is not None:
-            # Vérifier que le nouvel email n'existe pas
-            if email != self.repository.get_by_id(user_id).email:
-                if self.repository.exists(email):
-                    raise ValueError(f"Un utilisateur avec l'email {email} existe déjà")
-            update_data["email"] = email
-        
-        if password is not None:
-            update_data["hashed_password"] = self.auth_service.get_password_hash(password)
-        
-        return self.repository.update(user_id, update_data)
+        update_dict = user_data.model_dump(exclude_unset=True)
+
+        if "password" in update_dict:
+            raw_password = update_dict.pop("password")
+            update_dict["hashed_password"] = self.auth_service.get_password_hash(raw_password)
+
+        if "email" in update_dict:
+            if self.repository.exists(update_dict["email"]):
+                raise ValueError(f"A user with the email {update_dict['email']} already exists")
+
+        return self.repository.update(user_id, update_dict)
 
     def delete_user(self, user_id: UUID) -> bool:
         """Supprime un utilisateur par son ID."""
         return self.repository.delete(user_id)
     
-    # def get_current_user(self, token: str):
-    #     """Valide le token JWT dans l'entête de la requête et identifie l'utilisateur en vérifiant qu'il est 
-    #         présent dans la base de données."""
-    #     email = self.auth_service.decode_token(token)
-    #     user = self.repository.get_by_email(email)
-    #     if not user:
-    #         raise HTTPException(status_code=401, detail="User non trouvé")
-    #     return user
 
-    def authenticate_user(self, email: str, password: str) -> User | bool:
+    def authenticate_user(self, email: str, password: str) -> Optional[User]:
         """
         Authentifie un utilisateur avec email et mot de passe.
-        Retourne l'utilisateur s'il existe et que le mot de passe est correct.
+        Retourne l'objet User si authentifié, sinon None.
         """
         user = self.repository.get_by_email(email)
         if not user:
-            return False
-        
+            return None
         if not self.auth_service.verify_password(password, user.hashed_password):
-            return False
-        
+            return None
         return user
+    
+    def bill_user_for_tokens(self, user_id: UUID, tokens_consumed: int, model_name: str, cost_usd: float):
+        user = self.repository.get_by_id(user_id)
+        if not user:
+            raise ValueError(f"User with ID {user_id} not found")
+        user_wallet = user.wallet
+        if not user_wallet:
+            raise Exception("L'utilisateur n'a pas de wallet.")
+
+        # 2. Effectuer le prélèvement sur la blockchain via Circle
+        transaction_id = self.treasury.charge_user_wallet(
+            user_wallet_id=user_wallet.circle_wallet_id,
+            amount=cost_usd
+        )
+
+        # 3. Enregistrer la consommation dans ta table token_usage
+        # (À implémenter avec un repository dédié pour token_usage)
+        # usage_repo.create_usage(...)
+        
+        return transaction_id

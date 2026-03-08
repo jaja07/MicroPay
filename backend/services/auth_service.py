@@ -48,7 +48,7 @@ class AuthService:
         else:
             expire = datetime.now(timezone.utc) + timedelta(minutes=15)
         to_encode.update({"exp": expire})
-        encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY.get_secret_value(), algorithm=settings.ALGORITHM)
+        encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
         return encoded_jwt
         
     def generate_otp(self, length: int = 6) -> str:
@@ -58,7 +58,7 @@ class AuthService:
     def send_mail(self, data: dict | None = None):
         try:
             logger.info(f"Début envoi email : {data}")
-            msg = MailBody(**data)
+            msg = MailBody(**data) # pyright: ignore
             message = MIMEText(msg.body, "html")
             message["From"] = settings.FROM_MAIL
             message["To"] = msg.to
@@ -71,7 +71,7 @@ class AuthService:
                 server.ehlo()
                 server.starttls(context=ctx)
                 server.ehlo()
-                server.login(settings.MAIL_USERNAME, settings.MAIL_PASSWORD)
+                server.login(settings.MAIL_USERNAME, settings.MAIL_PASSWORD) # pyright: ignore
                 server.send_message(message)
                 logger.info(f"Email envoyé avec succès à {msg.to}")
             

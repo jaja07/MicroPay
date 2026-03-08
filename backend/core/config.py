@@ -151,7 +151,7 @@ class Settings(BaseSettings):
     MIN_GAS_THRESHOLD: float = Field(1.0, validation_alias="CIRCLE_MIN_GAS_THRESHOLD")
     
     # --- JWT Configuration ---
-    SECRET_KEY: SecretStr = Field(..., validation_alias="SECRET_KEY")
+    SECRET_KEY: str = Field(..., validation_alias="SECRET_KEY")
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: float = 60
     
@@ -164,7 +164,13 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_file=Path(__file__).parent.parent / ".env",
-        extra="ignore"
+        extra="ignore",
+        env_file_encoding="utf-8"
     )
 
-settings = Settings()
+try:
+    settings = Settings() # pyright: ignore
+except Exception as e:
+    print(f"Warning: Failed to load settings from .env file: {e}")
+    print("Ensure your .env file exists in the project root with all required environment variables.")
+    raise

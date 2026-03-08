@@ -6,17 +6,10 @@ if TYPE_CHECKING:
     from .user_entity import User
 
 class Wallet(SQLModel, table=True):
-    __tablename__ = "wallets"
+    __tablename__ = "wallets" # pyright: ignore
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    
-    # Ajout de unique=True pour garantir la relation 1-to-1 au niveau DB
-    user_id: UUID = Field(
-        foreign_key="users.id", 
-        ondelete="CASCADE", 
-        unique=True 
-    )
-    
+    user_id: UUID = Field(foreign_key="users.id", ondelete="CASCADE", unique=True) # Ajout de unique=True pour garantir la relation 1-to-1 au niveau DB
     circle_wallet_id: str = Field(max_length=255, unique=True, index=True)
     address: str = Field(max_length=255)
     blockchain: str = Field(max_length=50)

@@ -16,10 +16,10 @@ class RechargeStatus(str, Enum):
     CANCELLED = "cancelled"
 
 class Recharges(SQLModel, table=True):
-    __tablename__ = "recharges"
+    __tablename__ = "recharges" # pyright: ignore
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    user_id: UUID = Field(foreign_key="users.id", nullable=False, index=True)# Clé étrangère vers Users
+    user_id: UUID = Field(foreign_key="users.id", nullable=False, index=True, ondelete="CASCADE")
     
     # --- Logique Métier (1 Unit = 0.1 USDC) ---
     units_granted: int = Field(description="Nombre d'unités achetées")

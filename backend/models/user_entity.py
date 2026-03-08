@@ -21,7 +21,7 @@ class User(SQLModel, table=True):
     Modèle représentant un utilisateur dans la base de données.
     Contient les informations de base, le rôle, le mot de passe haché,
     """
-    __tablename__ = "users"
+    __tablename__ = "users" # pyright: ignore
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     email: str = Field(unique=True, index=True, nullable=False)
@@ -31,7 +31,8 @@ class User(SQLModel, table=True):
     hashed_password: str = Field(nullable=False)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     wallet: Optional["Wallet"] = Relationship(back_populates="user", cascade_delete=True)
-    recharges: list["Recharges"] = Relationship(back_populates="user")
+    recharges: list["Recharges"] = Relationship(back_populates="user", cascade_delete=True)
+    units: float = Field(default=0.0)
 
     class Config:
         json_schema_extra = {

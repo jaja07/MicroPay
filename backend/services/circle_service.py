@@ -118,3 +118,15 @@ class CircleService:
             response.raise_for_status()
 
         return response.json()
+    
+    def delete(self, endpoint: str) -> dict:
+        """DELETE générique Circle"""
+
+        url = f"{self.base_url}{endpoint}"
+        response = requests.delete(url, headers=self.headers, timeout=15)
+
+        if not response.ok:
+            print(f"Erreur Circle DELETE ({response.status_code}): {response.text}")
+            response.raise_for_status()
+
+        return response.json()

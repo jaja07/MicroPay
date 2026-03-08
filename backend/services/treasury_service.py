@@ -3,6 +3,7 @@ import uuid
 import os
 from decimal import Decimal
 from backend.services.circle_service import CircleService
+from core.config import settings
 
 class TreasuryService:
     """
@@ -11,8 +12,16 @@ class TreasuryService:
     """
     def __init__(self):
         self.connector = CircleService()
-        self.master_wallet_id = os.getenv("CIRCLE_MASTER_WALLET_ID")
-        self.usdc_token_id = os.getenv("CIRCLE_USDC_TOKEN_ID")
+        self.master_wallet_id = settings.MASTER_WALLET_ID
+        self.usdc_token_id = settings.USDC_TOKEN_ID
+
+    def get_master(self) -> dict:
+        """Récupère les infos du Master Wallet"""
+        endpoint = f"/w3s/wallets/{self.master_wallet_id}"
+        master_wallet = self.connector.get(endpoint).get("data", {}).get("wallet", {})
+        if not master_wallet:
+            raise ValueError("Master Wallet introuvable")
+        return master_wallet
 
     def get_master_balance_usdc(self) -> Decimal:
         """Récupère le solde USDC disponible"""
@@ -45,3 +54,24 @@ class TreasuryService:
         
         response = self.connector.post("/w3s/developer/transactions/transfer", payload)
         return response.get("data", {}).get("id")
+    
+    def charge_user_wallet(self, user_wallet_id: str, amount: float) -> str:
+        """
+        Débite le wallet de l'utilisateur pour le payer au Master Wallet.
+        Retourne l'ID de la transaction pour suivi.
+        """
+        payload = {
+            "idempotencyKey": str(uuid.uuid4()),
+            "entitySecretCiphertext": self.connector.encrypt_entity_secret(),
+            "amounts": [str(amount)],
+            "feeLevel": "MEDIUM",
+            "tokenId": self.usdc_token_id,
+            "walletId": user_wallet_id,
+            "destinationAddress": self.get_master().get("address"),
+            "refId": f"charge_usage_{uuid.uuid4()}"
+        }
+        
+        response = self.connector.post("/w3s/developer/transactions/transfer", payload)
+        
+        return response.get("data", {}).get("id")
+    

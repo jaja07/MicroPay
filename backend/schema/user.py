@@ -37,9 +37,31 @@ class UserCreateDTO(UserBase):
                 "nom": "DOE",
                 "prenom": "John",
                 "role": "user",
-                "password": "1234"
+                "password": "1234",
+                "units": 0.0
             }
     }
+
+class UserUpdateDTO(BaseModel):
+    email: EmailStr | None = None
+    nom: str | None = None
+    prenom: str | None = None
+    password: str | None = None
+    units: float | None = None
+    role: Role | None = None
+
+    class Config:
+        from_attributes = True
+        json_schema_extra = {
+            "example": {
+                "email": "updated@example.com",
+                "nom": "Updated",
+                "prenom": "User",
+                "password": "newpassword123",
+                "units": 10.0,
+                "role": "user"
+            }
+        }
 
 class Token(BaseModel):
     access_token: str

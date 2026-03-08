@@ -12,8 +12,7 @@ from backend.repositories.user_repository import UserRepository
 from backend.db.session import SessionDep
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/token")
-
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/token") # The connection URL used by the frontend to obtain the JWT token after login
 # Todo: Rendre la fonction asynchrone
 def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)],
